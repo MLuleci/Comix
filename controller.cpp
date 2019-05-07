@@ -2,7 +2,7 @@
 #include <SDL_image.h>
 #include "controller.h"
 
-Controller::Controller(char *Path) : Running(true), Window(NULL), Image(NULL), width(0), height(0), mod(1)
+Controller::Controller(char *Path) : Running(true), Update(true), Window(NULL), Image(NULL), width(0), height(0), mod(1)
 {
 	// Create window
 	int Flags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_MAXIMIZED;
@@ -55,7 +55,10 @@ int Controller::Loop()
 		while (SDL_PollEvent(&Event)) {
 			OnEvent(&Event);
 		}
-		Render();
+		if (Update) {
+			Render();
+			Update = false;
+		}
 	}
 
 	return 0;
@@ -74,26 +77,32 @@ void Controller::OnEvent(SDL_Event *Event)
 				Index--;
 				Image = LoadTexture(Paths.at(Index));
 				mod = 1.f;
+				Update = true;
 			} else if (sym.scancode == SDL_SCANCODE_RIGHT) {
 				if (++Index == Paths.size()) Index = 0;
 				Image = LoadTexture(Paths.at(Index));
 				mod = 1.f;
+				Update = true;
 			} else if (sym.mod & KMOD_CTRL) {
 				if (sym.scancode == SDL_SCANCODE_EQUALS) {
-					ScrollUp();
+					ZoomIn();
 				} else if (sym.scancode == SDL_SCANCODE_MINUS) {
-					ScrollDown();
+					ZoomOut();
 				} else if (sym.scancode == SDL_SCANCODE_0) {
 					mod = 1.f;
+					Update = true;
 				}
 			}
 			break;
 		case SDL_MOUSEWHEEL:
 			if (Event->wheel.y > 0) { // Up
-				ScrollUp();
+				ZoomIn();
 			} else if (Event->wheel.y < 0) { // Down
-				ScrollDown();
+				ZoomOut();
 			}
+			break;
+		case SDL_WINDOWEVENT:
+			Update = true;
 			break;
 	}
 }
@@ -149,14 +158,16 @@ bool Controller::ValidateFile(fs::path Path)
 	return false;
 }
 
-void Controller::ScrollUp() 
+void Controller::ZoomIn() 
 {
 	mod += 0.1f;
 	if (mod > 2.f) mod = 2.f;
+	Update = true;
 }
 
-void Controller::ScrollDown() 
+void Controller::ZoomOut() 
 {
 	mod -= 0.1f;
 	if (mod < 0.1f) mod = 0.1f;
+	Update = true;
 }

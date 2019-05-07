@@ -12,7 +12,7 @@ const std::string Extensions[] = {"jpg", "jpeg", "png"};
 
 class Controller {
 private:
-	bool Running;
+	bool Running, Update;
 	SDL_Window *Window;
 	SDL_Renderer *Renderer;
 	
@@ -23,8 +23,8 @@ private:
 	std::vector<fs::path> Paths;
 	size_t Index;
 
-	void ScrollUp();
-	void ScrollDown();
+	void ZoomIn();
+	void ZoomOut();
 	SDL_Texture *LoadTexture(fs::path Path);
 	bool ValidateFile(fs::path Path);
 public:

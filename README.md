@@ -1,0 +1,2 @@
+# ImageViewer
+You must place all of the required SDL_Image and SDL dynamic library files in the same directory as the source. For debugging SDL and SDL_Image libraries and include directories must be linked with your IDE of choice.

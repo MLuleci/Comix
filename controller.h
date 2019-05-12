@@ -23,7 +23,7 @@ private:
 
 	SDL_Cursor *m_cursor;
 	SDL_Rect m_rect;
-	int m_sx, m_sy;
+	int m_sx, m_sy, m_bx, m_by;
 
 	bool m_keep_zoom;
 	SDL_Scancode m_next, m_prev;

@@ -164,6 +164,10 @@ Controller::~Controller()
 	} else {
 		std::cerr << "Couldn't save changes to config file, exiting without it..." << std::endl;
 	}
+	if (fs::exists("tmp.config")) {
+		if (file_out.is_open()) file_out.close();
+		fs::remove("tmp.config");
+	}
 
 	// Clean-up
 	m_run = false;
@@ -199,21 +203,40 @@ void Controller::Event(SDL_Event *event)
 		case SDL_KEYDOWN:
 		{
 			SDL_Keysym sym = event->key.keysym;
-			if (sym.scancode == m_next) { // Load previous image
+			SDL_Scancode code = sym.scancode;
+
+			// Image navigation
+			if (m_scale > 1.f) {
+				if (code == SDL_SCANCODE_UP) {
+					Move(0, m_rect.h * 0.02f);
+				} else if (code == SDL_SCANCODE_DOWN) {
+					Move(0, m_rect.h * -0.02f);
+				} else if (code == SDL_SCANCODE_HOME) {
+					m_rect.y = 0;
+				} else if (code == SDL_SCANCODE_END) {
+					m_rect.y = m_win_h - m_rect.h;
+				} else if (code == SDL_SCANCODE_PAGEUP) {
+					Move(0, m_rect.h * 0.1f);
+				} else if (code == SDL_SCANCODE_PAGEDOWN) {
+					Move(0, m_rect.h * -0.1f);
+				}
+			}
+
+			if (code == m_next) { // Load previous image
 				if (m_index == 0) m_index = m_list.size();
 				m_index--;
 				m_img = LoadImage(m_list.at(m_index));
-			} else if (sym.scancode == m_prev) { // Load next image
+			} else if (code == m_prev) { // Load next image
 				if (++m_index == m_list.size()) m_index = 0;
 				m_img = LoadImage(m_list.at(m_index));
 			} else if (sym.mod & KMOD_CTRL) {
-				if (sym.scancode == SDL_SCANCODE_EQUALS) { // Ctrl +
+				if (code == SDL_SCANCODE_EQUALS) { // Ctrl +
 					Zoom(m_scale + 0.1f);
 					CenterImage();
-				} else if (sym.scancode == SDL_SCANCODE_MINUS) { // Ctrl -
+				} else if (code == SDL_SCANCODE_MINUS) { // Ctrl -
 					Zoom(m_scale - 0.1f);
 					CenterImage();
-				} else if (sym.scancode == SDL_SCANCODE_0) { // Ctrl 0
+				} else if (code == SDL_SCANCODE_0) { // Ctrl 0
 					Zoom(1.f);
 					CenterImage();
 				}
@@ -269,6 +292,24 @@ void Controller::Event(SDL_Event *event)
 		case SDL_MOUSEBUTTONDOWN:
 			if (event->button.button == SDL_BUTTON_LEFT) {
 				SDL_GetMouseState(&m_sx, &m_sy);
+				m_bx = m_sx;
+				m_by = m_sy;
+			}
+			break;
+		case SDL_MOUSEBUTTONUP:
+			if (event->button.button == SDL_BUTTON_LEFT) {
+				int x, y;
+				SDL_GetMouseState(&x, &y);
+				if (x == m_bx && y == m_by) {
+					SDL_Event evt;
+					evt.type = SDL_KEYDOWN;
+					if (m_next == SDL_SCANCODE_RIGHT) {
+						evt.key.keysym.scancode = (x >= m_win_w / 2 ? m_next : m_prev);
+					} else {
+						evt.key.keysym.scancode = (x >= m_win_w / 2 ? m_prev : m_next);
+					}
+					SDL_PushEvent(&evt);
+				}
 			}
 			break;
 		case SDL_MOUSEMOTION:

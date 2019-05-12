@@ -3,8 +3,6 @@
 #include <vector>
 #include <string>
 #include <SDL.h>
-#define WIDTH 640
-#define HEIGHT 480
 #define sign(x) (x > 0 ? 1 : (x < 0 ? -1 : 0))
 
 namespace fs = std::filesystem;
@@ -27,10 +25,14 @@ private:
 	SDL_Rect m_rect;
 	int m_sx, m_sy;
 
+	bool m_keep_zoom;
+	SDL_Scancode m_next, m_prev;
+
 	const std::string m_ext[3] = { "jpg", "jpeg", "png" };
 
 	bool Validate(fs::path path);
-	void UpdateDim();
+	void GetWinDim();
+	void CenterImage();
 public:
 	Controller(char *path);
 	~Controller();

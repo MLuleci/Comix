@@ -1,4 +1,6 @@
 *.dll
 *.vcxproj*
 Debug/
+Release/
 .config
+res/*

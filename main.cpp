@@ -1,5 +1,4 @@
 #include <iostream>
-#include <SDL_image.h>
 #include "controller.h"
 
 int main(int argc, char *argv[]) 
@@ -14,6 +13,9 @@ int main(int argc, char *argv[])
 		return -1;
 	} else if (!(IMG_Init(Flags) & Flags)) {
 		std::cerr << "Couldn't initialise SDL image: " << IMG_GetError() << std::endl;
+		return -1;
+	} else if (TTF_Init() < 0) {
+		std::cerr << "Couldn't initialise SDL TTF: " << TTF_GetError() << std::endl;
 		return -1;
 	}
 

@@ -252,8 +252,10 @@ void Controller::Event(SDL_Event *event)
 					Move(0, static_cast<int>(m_rect.h * -0.02f));
 				} else if (code == SDL_SCANCODE_HOME) {
 					m_rect.y = 0;
+					m_update = true;
 				} else if (code == SDL_SCANCODE_END) {
 					m_rect.y = m_win_h - m_rect.h;
+					m_update = true;
 				} else if (code == SDL_SCANCODE_PAGEUP) {
 					Move(0, static_cast<int>(m_rect.h * 0.1f));
 				} else if (code == SDL_SCANCODE_PAGEDOWN) {
@@ -261,11 +263,11 @@ void Controller::Event(SDL_Event *event)
 				}
 			}
 
-			if (code == m_next) { // Load previous image
+			if (code == m_prev) { // Load previous image
 				if (m_index == 0) m_index = m_list.size();
 				m_index--;
 				m_img = LoadImage(m_list.at(m_index));
-			} else if (code == m_prev) { // Load next image
+			} else if (code == m_next) { // Load next image
 				if (++m_index == m_list.size()) m_index = 0;
 				m_img = LoadImage(m_list.at(m_index));
 			} else if (sym.mod & KMOD_CTRL) {
@@ -387,7 +389,7 @@ void Controller::Render()
 SDL_Texture *Controller::LoadImage(fs::path path)
 {
 	if (m_img != NULL) (m_img);
-	SDL_Surface *surface = IMG_Load(path.generic_string().c_str()); // Load surface
+	SDL_Surface *surface = IMG_Load(path.u8string().c_str()); // Load surface
 	SDL_Texture *texture = SDL_CreateTextureFromSurface(m_render, surface); // Load texture
 
 	if (texture == NULL || surface == NULL) {
@@ -396,7 +398,7 @@ SDL_Texture *Controller::LoadImage(fs::path path)
 		// Update info bar
 		SDL_DestroyTexture(m_text[0]);
 		SDL_Color white = { 0xFF, 0xFF, 0xFF, 0xFF };
-		m_text[0] = LoadText(path.string(), white, &m_text_rect[0]);
+		m_text[0] = LoadText(path.filename().u8string().c_str(), white, &m_text_rect[0]);
 
 		// Reset values
 		m_img_w = surface->w;
@@ -413,11 +415,10 @@ SDL_Texture *Controller::LoadImage(fs::path path)
 	return texture;
 }
 
-SDL_Texture *Controller::LoadText(std::string text, SDL_Color color, SDL_Rect *rect)
+SDL_Texture *Controller::LoadText(const char *text, SDL_Color color, SDL_Rect *rect)
 {
-	SDL_Surface *surface = TTF_RenderText_Blended(m_font, text.c_str(), color);
+	SDL_Surface *surface = TTF_RenderUTF8_Blended(m_font, text, color);
 	SDL_Texture *texture = SDL_CreateTextureFromSurface(m_render, surface);
-
 	if (texture == NULL || surface == NULL) {
 		std::cerr << "Couldn't load texture/surface: " << SDL_GetError() << std::endl;
 	} else {
@@ -434,7 +435,7 @@ SDL_Texture *Controller::LoadText(std::string text, SDL_Color color, SDL_Rect *r
 bool Controller::Validate(fs::path path) 
 {
 	if (!path.empty() && !fs::is_directory(path) && fs::is_regular_file(path)) {
-		std::string ext = path.extension().generic_string();
+		std::string ext = path.extension().string();
 		if (!ext.empty()) {
 			ext = ext.substr(1, ext.length());
 			for (std::string e : m_ext)
@@ -483,9 +484,8 @@ void Controller::Zoom(float scale)
 	SDL_DestroyTexture(m_text[1]);
 	SDL_Color white = {0xFF, 0xFF, 0xFF, 0xFF};
 	std::stringstream ss;
-	ss << static_cast<int>((m_rect.h ? m_rect.h : m_win_h) * 100 / m_img_h);
-	ss << "% | " << m_index + 1 << '/' << m_list.size();
-	m_text[1] = LoadText(ss.str(), white, &m_text_rect[1]);
+	ss << static_cast<int>((m_rect.h ? m_rect.h : m_win_h) * 100 / m_img_h) << "% | " << m_index + 1 << '/' << m_list.size();
+	m_text[1] = LoadText(ss.str().c_str(), white, &m_text_rect[1]);
 
 	// Resize image
 	GetWinDim();

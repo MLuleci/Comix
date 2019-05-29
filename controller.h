@@ -53,5 +53,5 @@ public:
 	void Zoom(float scale);
 	void Move(int x, int y);
 	SDL_Texture *LoadImage(fs::path path);
-	SDL_Texture *LoadText(std::string text, SDL_Color color, SDL_Rect *rect = NULL);
+	SDL_Texture *LoadText(const char *text, SDL_Color color, SDL_Rect *rect = NULL);
 };

@@ -19,15 +19,21 @@ int ParseBool(std::string str)
 	return (!str.compare("true") ? 1 : (!str.compare("false") ? 0 : -1));
 }
 
-Controller::Controller(char *path) : m_run(true), m_window(NULL), m_img(NULL), m_scale(1.f)
+Controller::Controller(char *path)
 {
 	// Set-up defaults
+	m_run = true;
+	m_window = NULL;
+	m_img = NULL;
 	m_next = SDL_SCANCODE_RIGHT;
 	m_prev = SDL_SCANCODE_LEFT;
 	m_win_w = 640;
 	m_win_h = 480;
 	m_keep_zoom = false;
 	m_font_size = 12;
+	m_scroll = 0.02f;
+	m_scale = 1.f;
+	m_bar = {0};
 	int flags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_INPUT_FOCUS | SDL_WINDOW_MOUSE_FOCUS;
 	int x = SDL_WINDOWPOS_CENTERED, y = SDL_WINDOWPOS_CENTERED;
 
@@ -99,6 +105,13 @@ Controller::Controller(char *path) : m_run(true), m_window(NULL), m_img(NULL), m
 					} else {
 						m_font_size = tmp;
 					}
+				} else if (!opt.compare("scroll")) {
+					float tmp; 
+					if (sscanf(&val[0], "%f%%", &tmp) != 1 || tmp <= 0.f || tmp > 100.f) {
+						std::cerr << "Value '" << val << "' invalid for option '" << opt << "'" << std::endl;
+					} else {
+						m_scroll = tmp / 100.f;
+					}
 				} else {
 					std::cerr << "Option '" << opt << "' is not valid" << std::endl;
 				}
@@ -130,17 +143,19 @@ Controller::Controller(char *path) : m_run(true), m_window(NULL), m_img(NULL), m
 	SDL_SetRenderDrawColor(m_render, m_color[0], m_color[1], m_color[2], 0xFF);
 
 	// Load font
-	fs::directory_iterator it("res/");
-	if (it != fs::directory_iterator()) {
-		fs::directory_entry font = *it;
-		if (font.exists()) m_font = TTF_OpenFont(font.path().string().c_str(), m_font_size);
-		if (m_font == NULL) {
-			std::cerr << "Couldn't load font: " << TTF_GetError() << std::endl;
+	if (m_font_size > 0) {
+		fs::directory_iterator it("res/");
+		if (it != fs::directory_iterator()) {
+			fs::directory_entry font = *it;
+			if (font.exists()) m_font = TTF_OpenFont(font.path().string().c_str(), m_font_size);
+			if (m_font == NULL) {
+				std::cerr << "Couldn't load font: " << TTF_GetError() << std::endl;
+				exit(-1);
+			}
+		} else {
+			std::cerr << "No font file found, place '.ttf' file(s) in the 'res/' directory." << std::endl;
 			exit(-1);
 		}
-	} else {
-		std::cerr << "No font file found, place '.ttf' file(s) in the 'res/' directory." << std::endl;
-		exit(-1);
 	}
 
 	// Set-up path & directories
@@ -247,9 +262,9 @@ void Controller::Event(SDL_Event *event)
 			// Image navigation
 			if (m_scale > 1.f) {
 				if (code == SDL_SCANCODE_UP) {
-					Move(0, static_cast<int>(m_rect.h * 0.02f));
+					Move(0, static_cast<int>(m_rect.h * m_scroll));
 				} else if (code == SDL_SCANCODE_DOWN) {
-					Move(0, static_cast<int>(m_rect.h * -0.02f));
+					Move(0, static_cast<int>(m_rect.h * -m_scroll));
 				} else if (code == SDL_SCANCODE_HOME) {
 					m_rect.y = 0;
 					m_update = true;
@@ -287,6 +302,8 @@ void Controller::Event(SDL_Event *event)
 					}
 					Zoom(1.f / mod);
 					CenterImage();
+				} else if (code == SDL_SCANCODE_W) { // Ctrl W
+					m_run = false;
 				}
 			}
 			break;
@@ -382,14 +399,15 @@ void Controller::Render()
 	tmp.h -= m_bar.h;
 	SDL_RenderCopy(m_render, m_img, NULL, &tmp);
 
-	// Draw bar
-	SDL_SetRenderDrawColor(m_render, 0x2D, 0x2D, 0x30, 0xFF);
-	SDL_RenderFillRect(m_render, &m_bar);
-	
-	// Draw text
-	SDL_RenderCopy(m_render, m_text[0], NULL, &m_text_rect[0]);
-	SDL_RenderCopy(m_render, m_text[1], NULL, &m_text_rect[1]);
+	if (m_font_size > 0) {
+		// Draw bar
+		SDL_SetRenderDrawColor(m_render, 0x2D, 0x2D, 0x30, 0xFF);
+		SDL_RenderFillRect(m_render, &m_bar);
 
+		// Draw text
+		SDL_RenderCopy(m_render, m_text[0], NULL, &m_text_rect[0]);
+		SDL_RenderCopy(m_render, m_text[1], NULL, &m_text_rect[1]);
+	}
 	SDL_SetRenderDrawColor(m_render, m_color[0], m_color[1], m_color[2], 0xFF);
 	SDL_RenderPresent(m_render);
 }
@@ -405,7 +423,7 @@ SDL_Texture *Controller::LoadImage(fs::path path)
 	} else {
 		// Update info bar
 		SDL_DestroyTexture(m_text[0]);
-		SDL_Color white = { 0xFF, 0xFF, 0xFF, 0xFF };
+		SDL_Color white = {0xFF, 0xFF, 0xFF, 0xFF};
 		m_text[0] = LoadText(path.filename().u8string().c_str(), white, &m_text_rect[0]);
 
 		// Reset values
@@ -425,6 +443,7 @@ SDL_Texture *Controller::LoadImage(fs::path path)
 
 SDL_Texture *Controller::LoadText(const char *text, SDL_Color color, SDL_Rect *rect)
 {
+	if (m_font_size <= 0) return NULL;
 	SDL_Surface *surface = TTF_RenderUTF8_Blended(m_font, text, color);
 	SDL_Texture *texture = SDL_CreateTextureFromSurface(m_render, surface);
 	if (texture == NULL || surface == NULL) {
@@ -466,6 +485,8 @@ void Controller::CenterImage()
 
 void Controller::UpdateBar() 
 {
+	if (m_font_size <= 0) return;
+
 	// Update info bar
 	m_bar.h = static_cast<int>(m_font_size * 1.5f);
 	m_bar.w = m_win_w;

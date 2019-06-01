@@ -25,6 +25,7 @@ private:
 	int m_img_w, m_img_h;
 	int m_win_w, m_win_h;
 	float m_scale;
+	float m_scroll;
 
 	std::vector<fs::path> m_list;
 	size_t m_index;

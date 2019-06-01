@@ -280,6 +280,13 @@ void Controller::Event(SDL_Event *event)
 				} else if (code == SDL_SCANCODE_0) { // Ctrl 0
 					Zoom(1.f);
 					CenterImage();
+				} else if (code == SDL_SCANCODE_1) { // Ctrl 1
+					float mod = 1.f;
+					if (m_win_w < m_img_w || m_win_h < m_img_h) { // Window smaller than image, fit it in
+						mod *= fmin((float)m_win_w / (float)m_img_w, (float)m_win_h / (float)m_img_h);
+					}
+					Zoom(1.f / mod);
+					CenterImage();
 				}
 			}
 			break;
@@ -310,6 +317,7 @@ void Controller::Event(SDL_Event *event)
 			int w = m_win_w;
 			int h = m_win_h;
 			GetWinDim();
+			UpdateBar();
 			if (w != m_win_w || h != m_win_h) {
 				if (m_scale > 1.f) {
 					if (m_win_w > m_rect.w) {
@@ -448,7 +456,16 @@ bool Controller::Validate(fs::path path)
 void Controller::GetWinDim()
 {
 	SDL_GetWindowSize(m_window, &m_win_w, &m_win_h); // Update width & height
+}
 
+void Controller::CenterImage() 
+{
+	m_rect.x = (m_win_w - m_rect.w) / 2;
+	m_rect.y = (m_win_h - m_rect.h) / 2;
+}
+
+void Controller::UpdateBar() 
+{
 	// Update info bar
 	m_bar.h = static_cast<int>(m_font_size * 1.5f);
 	m_bar.w = m_win_w;
@@ -463,12 +480,6 @@ void Controller::GetWinDim()
 	m_text_rect[1].x = m_win_w - m_text_rect[1].w - pad;
 }
 
-void Controller::CenterImage() 
-{
-	m_rect.x = (m_win_w - m_rect.w) / 2;
-	m_rect.y = (m_win_h - m_rect.h) / 2;
-}
-
 void Controller::Zoom(float scale) 
 {
 	m_scale = scale;
@@ -479,13 +490,6 @@ void Controller::Zoom(float scale)
 	} else if (m_scale > 2.f) {
 		m_scale = 2.f;
 	}
-
-	// Update info bar
-	SDL_DestroyTexture(m_text[1]);
-	SDL_Color white = {0xFF, 0xFF, 0xFF, 0xFF};
-	std::stringstream ss;
-	ss << static_cast<int>((m_rect.h ? m_rect.h : m_win_h) * 100 / m_img_h) << "% | " << m_index + 1 << '/' << m_list.size();
-	m_text[1] = LoadText(ss.str().c_str(), white, &m_text_rect[1]);
 
 	// Resize image
 	GetWinDim();
@@ -507,6 +511,14 @@ void Controller::Zoom(float scale)
 		SDL_SetCursor(m_cursor);
 	}
 
+	// Update info bar
+	SDL_DestroyTexture(m_text[1]);
+	SDL_Color white = {0xFF, 0xFF, 0xFF, 0xFF};
+	std::stringstream ss;
+	ss << static_cast<int>(m_rect.h * 100 / m_img_h) << "% | " << m_index + 1 << '/' << m_list.size();
+	m_text[1] = LoadText(ss.str().c_str(), white, &m_text_rect[1]);
+
+	UpdateBar();
 	m_update = true;
 }
 

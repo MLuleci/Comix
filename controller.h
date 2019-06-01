@@ -42,6 +42,7 @@ private:
 	bool Validate(fs::path path);
 	void GetWinDim();
 	void CenterImage();
+	void UpdateBar();
 public:
 	Controller(char *path);
 	~Controller();

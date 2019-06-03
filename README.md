@@ -25,6 +25,6 @@ Option      | Purpose                                                       | Po
 `FontSize`  | Font size (height in pixels) for the info bar                 | `0-inf`               | `12`
 `Scroll`    | Scroll amount as a % of the page, mind the '%'                | `(0-100]%`            | `2%`
 
-The config file must be placed in the same directory as the executable and named `.config`, if no file is found defaults are used.
+The config file must be placed in the `res/` directory and named `.config`, if no file is found defaults are used.
 The lines must be formatted like `OPTION:VALUE\n`, wrongly formatted lines are ignored and defaults used instead.
-The program uses the first font file it finds inside `res/` placed within the executable directory. Font files must be '.ttf' format.
+The program uses the first font file it finds inside `res/` and only supports the '.ttf' format.

@@ -38,7 +38,7 @@ Controller::Controller(char *path)
 	int x = SDL_WINDOWPOS_CENTERED, y = SDL_WINDOWPOS_CENTERED;
 
 	// Read & parse config file
-	std::ifstream file_in(".config");
+	std::ifstream file_in("res/.config");
 	std::string line;
 	if (file_in) {
 		while (std::getline(file_in, line)) {
@@ -144,15 +144,18 @@ Controller::Controller(char *path)
 
 	// Load font
 	if (m_font_size > 0) {
-		fs::directory_iterator it("res/");
-		if (it != fs::directory_iterator()) {
-			fs::directory_entry font = *it;
-			if (font.exists()) m_font = TTF_OpenFont(font.path().string().c_str(), m_font_size);
-			if (m_font == NULL) {
-				std::cerr << "Couldn't load font: " << TTF_GetError() << std::endl;
-				exit(-1);
+		for (auto& font : fs::directory_iterator("res/")) {
+			if (!font.path().extension().compare(".ttf")) {
+				m_font = TTF_OpenFont(font.path().string().c_str(), m_font_size);
+				if (m_font == NULL) {
+					std::cerr << "Couldn't load font: " << TTF_GetError() << std::endl;
+					exit(-1);
+				} else {
+					break;
+				}
 			}
-		} else {
+		}
+		if (m_font == NULL) {
 			std::cerr << "No font file found, place '.ttf' file(s) in the 'res/' directory." << std::endl;
 			exit(-1);
 		}
@@ -181,8 +184,8 @@ Controller::Controller(char *path)
 Controller::~Controller() 
 {
 	// Save config changes
-	std::ifstream file_in(".config");
-	std::ofstream file_out("tmp.config");
+	std::ifstream file_in("res/.config");
+	std::ofstream file_out("res/tmp.config");
 	if (file_in && file_out) {
 		std::string line;
 		while (std::getline(file_in, line)) {
@@ -204,14 +207,14 @@ Controller::~Controller()
 		// Close files & rename temp
 		file_in.close();
 		file_out.close();
-		fs::remove(".config");
-		fs::rename("tmp.config", ".config");
+		fs::remove("res/.config");
+		fs::rename("res/tmp.config", "res/.config");
 	} else {
 		std::cerr << "Couldn't save changes to config file, exiting without it..." << std::endl;
 	}
-	if (fs::exists("tmp.config")) {
+	if (fs::exists("res/tmp.config")) {
 		if (file_out.is_open()) file_out.close();
-		fs::remove("tmp.config");
+		fs::remove("res/tmp.config");
 	}
 
 	m_run = false;

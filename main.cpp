@@ -5,7 +5,7 @@ int main(int argc, char *argv[])
 {
 	// Initialize SDL & check args
 	int Flags = IMG_INIT_JPG | IMG_INIT_PNG;
-	if (argc != 2) {
+	if (argc < 2) {
 		std::cerr << "Usage: " << argv[0] << " <path>" << std::endl;
 		return -1;
 	} else if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {

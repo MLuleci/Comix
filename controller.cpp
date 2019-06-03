@@ -170,6 +170,9 @@ Controller::Controller(char **argv)
 
 	// Set-up path & directories
 	fs::path file(argv[1]);
+	if (!fs::exists(file.parent_path())) {
+		file = fs::path("./").append(file);
+	}
 	if (Validate(file)) {
 		for (auto &p : fs::directory_iterator(file.parent_path())) { // Add all files to vector
 			if (Validate(p.path())) {
@@ -222,7 +225,7 @@ Controller::~Controller()
 		fs::remove(conf);
 		fs::rename(tmp_conf, conf);
 	} else {
-		std::cerr << "Failed to save changes to config file!." << std::endl;
+		std::cerr << "Failed to save changes to config file." << std::endl;
 	}
 	if (fs::exists(tmp_conf)) {
 		if (file_out.is_open()) file_out.close();

@@ -7,19 +7,19 @@ int main(int argc, char *argv[])
 	int Flags = IMG_INIT_JPG | IMG_INIT_PNG;
 	if (argc < 2) {
 		std::cerr << "Usage: " << argv[0] << " <path>" << std::endl;
-		return -1;
+		return 1;
 	} else if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
-		std::cerr << "Couldn't initialise SDL: " << SDL_GetError() << std::endl;
-		return -1;
+		std::cerr << "Failed to initialise SDL: " << SDL_GetError() << std::endl;
+		return 1;
 	} else if (!(IMG_Init(Flags) & Flags)) {
-		std::cerr << "Couldn't initialise SDL image: " << IMG_GetError() << std::endl;
-		return -1;
+		std::cerr << "Failed to initialise SDL image: " << IMG_GetError() << std::endl;
+		return 1;
 	} else if (TTF_Init() < 0) {
-		std::cerr << "Couldn't initialise SDL TTF: " << TTF_GetError() << std::endl;
-		return -1;
+		std::cerr << "Failed to initialise SDL TTF: " << TTF_GetError() << std::endl;
+		return 1;
 	}
 
-	Controller control(argv[1]);
+	Controller control(argv);
 
 	return control.Loop();
 }

@@ -19,10 +19,11 @@ int ParseBool(std::string str)
 	return (!str.compare("true") ? 1 : (!str.compare("false") ? 0 : -1));
 }
 
-Controller::Controller(char *path)
+Controller::Controller(char **argv)
 {
 	// Set-up defaults
-	m_run = true;
+	m_res_path = fs::path(argv[0]).parent_path().append("/res/");
+	m_run = false;
 	m_window = NULL;
 	m_img = NULL;
 	m_next = SDL_SCANCODE_RIGHT;
@@ -37,8 +38,14 @@ Controller::Controller(char *path)
 	int flags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_INPUT_FOCUS | SDL_WINDOW_MOUSE_FOCUS;
 	int x = SDL_WINDOWPOS_CENTERED, y = SDL_WINDOWPOS_CENTERED;
 
+	// Check for res directory
+	if (!fs::exists(m_res_path) && !fs::is_directory(m_res_path)) {
+		std::cerr << "Cannot find 'res/' directory." << std::endl;
+		return;
+	}
+
 	// Read & parse config file
-	std::ifstream file_in("res/.config");
+	std::ifstream file_in(m_res_path.string() + ".config");
 	std::string line;
 	if (file_in) {
 		while (std::getline(file_in, line)) {
@@ -119,7 +126,7 @@ Controller::Controller(char *path)
 		}
 		file_in.close();
 	} else {
-		std::cerr << "Couldn't open or find config file, using defaults..." << std::endl;
+		std::cerr << "Failed to open config file. Using defaults..." << std::endl;
 	}
 
 	// Try and set texture filtering to linear
@@ -130,39 +137,39 @@ Controller::Controller(char *path)
 	// Create m_window
 	m_window = SDL_CreateWindow("ImageViewer", x, y, m_win_w, m_win_h, flags);
 	if (m_window == NULL) {
-		std::cerr << "Couldn't create window: " << SDL_GetError() << std::endl;
-		exit(-1);
+		std::cerr << "Failed to create window: " << SDL_GetError() << std::endl;
+		return;
 	}
 
 	// Create m_render
 	m_render = SDL_CreateRenderer(m_window, -1, SDL_RENDERER_ACCELERATED);
 	if (m_render == NULL) {
-		std::cerr << "Couldn't create renderer: " << SDL_GetError() << std::endl;
-		exit(-1);
+		std::cerr << "Failed to create renderer: " << SDL_GetError() << std::endl;
+		return;
 	}
 	SDL_SetRenderDrawColor(m_render, m_color[0], m_color[1], m_color[2], 0xFF);
 
 	// Load font
 	if (m_font_size > 0) {
-		for (auto& font : fs::directory_iterator("res/")) {
+		for (auto& font : fs::directory_iterator(m_res_path)) {
 			if (!font.path().extension().compare(".ttf")) {
 				m_font = TTF_OpenFont(font.path().string().c_str(), m_font_size);
 				if (m_font == NULL) {
-					std::cerr << "Couldn't load font: " << TTF_GetError() << std::endl;
-					exit(-1);
+					std::cerr << "Failed to load font: " << TTF_GetError() << std::endl;
+					return;
 				} else {
 					break;
 				}
 			}
 		}
 		if (m_font == NULL) {
-			std::cerr << "No font file found, place '.ttf' file(s) in the 'res/' directory." << std::endl;
-			exit(-1);
+			std::cerr << "No font file(s) found." << std::endl;
+			return;
 		}
 	}
 
 	// Set-up path & directories
-	fs::path file(path);
+	fs::path file(argv[1]);
 	if (Validate(file)) {
 		for (auto &p : fs::directory_iterator(file.parent_path())) { // Add all files to vector
 			if (Validate(p.path())) {
@@ -172,20 +179,25 @@ Controller::Controller(char *path)
 		}
 		m_img = LoadImage(file);
 	} else {
-		std::cerr << "Path must point to an image (jpeg/jpg/png)" << std::endl;
-		exit(-1);
+		std::cerr << "Path must point to an image: jpeg, jpg, or png." << std::endl;
+		return;
 	}
 
 	// Set m_cursor
 	m_cursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
 	SDL_SetCursor(m_cursor);
+
+	// Finally set m_run
+	m_run = true;
 }
 
 Controller::~Controller() 
 {
 	// Save config changes
-	std::ifstream file_in("res/.config");
-	std::ofstream file_out("res/tmp.config");
+	std::string conf = m_res_path.string() + ".config";
+	std::string tmp_conf = m_res_path.string() + "tmp.config";
+	std::ifstream file_in(conf);
+	std::ofstream file_out(tmp_conf);
 	if (file_in && file_out) {
 		std::string line;
 		while (std::getline(file_in, line)) {
@@ -207,17 +219,15 @@ Controller::~Controller()
 		// Close files & rename temp
 		file_in.close();
 		file_out.close();
-		fs::remove("res/.config");
-		fs::rename("res/tmp.config", "res/.config");
+		fs::remove(conf);
+		fs::rename(tmp_conf, conf);
 	} else {
-		std::cerr << "Couldn't save changes to config file, exiting without it..." << std::endl;
+		std::cerr << "Failed to save changes to config file!." << std::endl;
 	}
-	if (fs::exists("res/tmp.config")) {
+	if (fs::exists(tmp_conf)) {
 		if (file_out.is_open()) file_out.close();
-		fs::remove("res/tmp.config");
+		fs::remove(tmp_conf);
 	}
-
-	m_run = false;
 
 	// Close font
 	TTF_CloseFont(m_font);
@@ -422,7 +432,7 @@ SDL_Texture *Controller::LoadImage(fs::path path)
 	SDL_Texture *texture = SDL_CreateTextureFromSurface(m_render, surface); // Load texture
 
 	if (texture == NULL || surface == NULL) {
-		std::cerr << "Couldn't load texture/surface: " << SDL_GetError() << std::endl;
+		std::cerr << "Failed to load texture or surface: " << SDL_GetError() << std::endl;
 	} else {
 		// Update info bar
 		SDL_DestroyTexture(m_text[0]);
@@ -450,7 +460,7 @@ SDL_Texture *Controller::LoadText(const char *text, SDL_Color color, SDL_Rect *r
 	SDL_Surface *surface = TTF_RenderUTF8_Blended(m_font, text, color);
 	SDL_Texture *texture = SDL_CreateTextureFromSurface(m_render, surface);
 	if (texture == NULL || surface == NULL) {
-		std::cerr << "Couldn't load texture/surface: " << SDL_GetError() << std::endl;
+		std::cerr << "Failed to load texture or surface: " << SDL_GetError() << std::endl;
 	} else {
 		if (rect) {
 			rect->w = surface->w;

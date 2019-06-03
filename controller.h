@@ -1,5 +1,5 @@
 #pragma once
-#include <filesystem>
+#include <experimental/filesystem>
 #include <vector>
 #include <string>
 #include <SDL.h>
@@ -7,7 +7,7 @@
 #include <SDL_ttf.h>
 #define sign(x) (x > 0 ? 1 : (x < 0 ? -1 : 0))
 
-namespace fs = std::filesystem;
+namespace fs = std::experimental::filesystem::v1;
 
 class Controller {
 private:
@@ -27,6 +27,7 @@ private:
 	float m_scale;
 	float m_scroll;
 
+	fs::path m_res_path;
 	std::vector<fs::path> m_list;
 	size_t m_index;
 
@@ -45,7 +46,7 @@ private:
 	void CenterImage();
 	void UpdateBar();
 public:
-	Controller(char *path);
+	Controller(char **argv);
 	~Controller();
 	
 	int Loop();

@@ -2,5 +2,4 @@
 *.vcxproj*
 Debug/
 Release/
-.config
-res/*
+res/*.ai

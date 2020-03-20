@@ -1,25 +1,35 @@
-﻿#include <iostream>
-#include "controller.h"
+#include <filesystem>
+#include <iostream>
+#include <string>
+#include <clocale>
+#include "util.h"
+#include "text.h"
+#include "control.h"
 
-int main(int argc, char *argv[]) 
+using namespace std;
+namespace fs = std::filesystem;
+
+bool is_image(const fs::path& p)
 {
-	// Initialize SDL & check args
-	int Flags = IMG_INIT_JPG | IMG_INIT_PNG;
-	if (argc < 2) {
-		std::cerr << "Usage: " << argv[0] << " <path>" << std::endl;
-		return 1;
-	} else if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
-		std::cerr << "Failed to initialise SDL: " << SDL_GetError() << std::endl;
-		return 1;
-	} else if (!(IMG_Init(Flags) & Flags)) {
-		std::cerr << "Failed to initialise SDL image: " << IMG_GetError() << std::endl;
-		return 1;
-	} else if (TTF_Init() < 0) {
-		std::cerr << "Failed to initialise SDL TTF: " << TTF_GetError() << std::endl;
-		return 1;
-	}
+	if (!fs::exists(p) || !fs::is_regular_file(p))
+		return false;
 
-	Controller control(argv);
+	string ext = p.extension().string();
+	return !ext.compare(".jpeg") || !ext.compare(".jpg") || !ext.compare(".png");
+}
 
-	return control.Loop();
+int main(int argc, char **argv) 
+{
+	// Enable UTF-8 multibyte encoding
+	setlocale(LC_ALL, "en_US.UTF-8");
+
+    // Print usage
+    if (argc != 2) {
+		cerr << "Usage: " << argv[0] << " <path>" << endl;
+        return 1;
+    }
+
+	// Initialize controller & loop
+	Control::get_instance().loop(argv[1]);
+    return 0;
 }

@@ -4,27 +4,14 @@
 #include "text.h"
 #include "render.h"
 #include "control.h"
+#include "util.h"
 
 using namespace std;
 namespace fs = std::filesystem;
 
 unique_ptr<TTF_Font, function<void(TTF_Font*)>> Text::_font(
-	[]() -> TTF_Font* {
-		// Initialize SDL_ttf subsystem
-		if (TTF_Init() < 0) {
-			cerr << "Failed to initialise SDL_ttf: " << TTF_GetError() << endl;
-			exit(1);
-		}
-
-		// Load the default font
-		TTF_Font* f = TTF_OpenFont("res/estre.ttf", 15);
-		if (!f) {
-			cerr << "Failed to load font: " << TTF_GetError() << endl;
-			exit(1);
-		}
-		return f;
-	}(),
-	[](TTF_Font* p) { 
+	nullptr, 
+	[](TTF_Font* p) {
 		TTF_CloseFont(p);
 		TTF_Quit();
 	}

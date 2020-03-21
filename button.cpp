@@ -12,7 +12,7 @@ namespace fs = std::filesystem;
 Button::Button(const fs::path& p)
 	: Widget()
 {
-	if (!is_image(p)) {
+	if (!Util::is_image(p)) {
 		cerr << "Internal error: " << p << " is not an image" << endl;
 		exit(1);
 	}

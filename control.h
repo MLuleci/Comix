@@ -68,7 +68,6 @@ class Control {
 public:
 	Control(const Control&) = delete;
 	Control& operator=(const Control&) = delete;
-	~Control();
 
 	static Control& get_instance();
 	void loop(std::filesystem::path);

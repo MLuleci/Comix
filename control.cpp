@@ -36,13 +36,10 @@ Control::Control()
 	// Create cursor
 	set_cursor(SDL_SYSTEM_CURSOR_ARROW);
 
-	// Set event watcher
-	SDL_AddEventWatch(watch, this);
-
 	// Create UI components
 	_win.get_size(&_winw, &_winh);
 
-	_widgets[0] = make_unique<Button>("res/ui_minus.png");
+	_widgets[0] = make_unique<Button>(Util::get_respath("ui_minus.png"));
 	_widgets[0]->set_handler([&](Widget& w) {
 		_focusx = _winw / 2;
 		_focusy = _winh / 2;
@@ -57,7 +54,7 @@ Control::Control()
 		fit();
 	});
 
-	_widgets[2] = make_unique<Button>("res/ui_plus.png");
+	_widgets[2] = make_unique<Button>(Util::get_respath("ui_plus.png"));
 	_widgets[2]->set_handler([&](Widget& w) {
 		_focusx = _winw / 2;
 		_focusy = _winh / 2;
@@ -65,36 +62,36 @@ Control::Control()
 		zoom((f > 0.09 ? i / 10.f : _zoom) + .1f);
 	});
 
-	_widgets[3] = make_unique<Button>("res/ui_rotate_left.png");
+	_widgets[3] = make_unique<Button>(Util::get_respath("ui_rotate_left.png"));
 	_widgets[3]->set_handler([&](Widget& w) {
 		_image->rotate_ccw();
 		fit();
 	});
 
-	_widgets[4] = make_unique<Button>("res/ui_rotate_right.png");
+	_widgets[4] = make_unique<Button>(Util::get_respath("ui_rotate_right.png"));
 	_widgets[4]->set_handler([&](Widget& w) {
 		_image->rotate_cw();
 		fit();
 	});
 
-	_widgets[5] = make_unique<Button>("res/ui_flip_x.png");
+	_widgets[5] = make_unique<Button>(Util::get_respath("ui_flip_x.png"));
 	_widgets[5]->set_handler([&](Widget& w) {
 		_image->flip_x();
 		fit();
 	});
 
-	_widgets[6] = make_unique<Button>("res/ui_flip_y.png");
+	_widgets[6] = make_unique<Button>(Util::get_respath("ui_flip_y.png"));
 	_widgets[6]->set_handler([&](Widget& w) {
 		_image->flip_y();
 		fit();
 	});
 
-	_widgets[7] = make_unique<Button>("res/ui_first.png");
+	_widgets[7] = make_unique<Button>(Util::get_respath("ui_first.png"));
 	_widgets[7]->set_handler([&](Widget& w) {
 		load_index(0);
 	});
 
-	_widgets[8] = make_unique<Button>("res/ui_left.png");
+	_widgets[8] = make_unique<Button>(Util::get_respath("ui_left.png"));
 	_widgets[8]->set_handler([&](Widget& w) {
 		size_t i = _index - 1;
 		if (i < 0)
@@ -108,7 +105,7 @@ Control::Control()
 		load_index(0);
 	});
 
-	_widgets[10] = make_unique<Button>("res/ui_right.png");
+	_widgets[10] = make_unique<Button>(Util::get_respath("ui_right.png"));
 	_widgets[10]->set_handler([&](Widget& w) {
 		size_t i = _index + 1;
 		if (i >= _paths.size())
@@ -116,7 +113,7 @@ Control::Control()
 		load_index(i);
 	});
 
-	_widgets[11] = make_unique<Button>("res/ui_last.png");
+	_widgets[11] = make_unique<Button>(Util::get_respath("ui_last.png"));
 	_widgets[11]->set_handler([&](Widget& w) {
 		load_index(_paths.size() - 1);
 	});
@@ -489,11 +486,6 @@ void Control::set_percent()
 	_percent->set_position(26 + (35 - w) / 2, _bar.y);
 }
 
-Control::~Control() 
-{
-	IMG_Quit();
-}
-
 Control& Control::get_instance()
 {
 	static Control instance;
@@ -515,7 +507,7 @@ void Control::loop(fs::path path)
 	// Get parent directory
 	fs::path first;
 	if (!fs::is_directory(path)) {
-		if (!is_image(path)) {
+		if (!Util::is_image(path)) {
 			cerr << path << " is not an image" << endl;
 			exit(1);
 		}
@@ -527,7 +519,7 @@ void Control::loop(fs::path path)
 	fs::directory_iterator directory(path);
 	for (auto &it : directory) {
 		fs::path p = it.path();
-		if (is_image(p))
+		if (Util::is_image(p))
 			_paths.push_back(p);
 	}
 
@@ -546,6 +538,10 @@ void Control::loop(fs::path path)
 	// Get initial index & load first image
 	auto found = find(_paths.begin(), _paths.end(), first);
 	load_index((found == _paths.end() ? 0 : distance(_paths.begin(), found)));
+
+	// Set event watcher
+	SDL_DelEventWatch(watch, this);
+	SDL_AddEventWatch(watch, this);
 
 	// Push initial event (to kickstart UI)
 	SDL_Event evnt;

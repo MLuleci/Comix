@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <SDL_image.h>
 #include "render.h"
+#include "util.h"
 
 using namespace std;
 namespace fs = std::filesystem;
@@ -37,7 +38,7 @@ RenderWindow::RenderWindow()
 	SDL_SetWindowMinimumSize(_window, 412, 334);
 
 	// Load & set icon
-	fs::path p = fs::current_path() / "res" / "icon.png";
+	fs::path p = Util::get_respath("icon.png");
 	_icon = IMG_Load(p.string().c_str());
 	if (!_icon) {
 		cerr << "Failed to load surface: " << p << endl;
@@ -62,6 +63,7 @@ RenderWindow::~RenderWindow()
 	SDL_DestroyRenderer(_renderer);
 	SDL_DestroyWindow(_window);
 	SDL_FreeSurface(_icon);
+	IMG_Quit();
 	SDL_Quit();
 }
 

@@ -49,7 +49,7 @@ void Image::update()
 Image::Image(const fs::path& p)
 	: _path(p.string())
 {
-	if (!is_image(p)) {
+	if (!Util::is_image(p)) {
 		cerr << "Internal error: " << p << " is not an image" << endl;
 		exit(1);
 	}
@@ -103,14 +103,14 @@ void Image::flip_x()
 	}
 
 	// Iterate over rows, copying pixels
-	void* pixels = _surface->pixels;
-	void* npixels = out->pixels;
+	Uint8* pixels = (Uint8*)_surface->pixels;
+	Uint8* npixels = (Uint8*)out->pixels;
 	int pitch = _surface->pitch;
 
 	for (int y = 0; y < _h; ++y) {
 		memcpy(
-			(Uint8*)npixels + y * pitch,
-			(Uint8*)pixels + (_h - y) * pitch,
+			npixels + y * pitch,
+			pixels + (_h - y - 1) * pitch,
 			pitch
 		);
 	}
@@ -152,16 +152,16 @@ void Image::flip_y()
 	}
 
 	// Iterate over columns, copying pixels
-	void* pixels = _surface->pixels;
-	void* npixels = out->pixels;
+	Uint8* pixels = (Uint8*)_surface->pixels;
+	Uint8* npixels = (Uint8*)out->pixels;
 	int pitch = _surface->pitch;
 
 	for (int y = 0; y < _h; ++y) {
 		int row = y * pitch;
 		for (int x = 0; x < _w; ++x) {
 			memcpy(
-				(Uint8*) npixels + x * size + row,
-				(Uint8*) pixels + (_w - x) * size + row,
+				npixels + x * size + row,
+				pixels + (_w - x - 1) * size + row,
 				size
 			);
 		}
@@ -179,7 +179,7 @@ void Image::flip_y()
 	update();
 }
 
-void Image::rotate_cw() 
+void Image::rotate_cw()
 {
 	// Get pixel format
 	SDL_PixelFormat* fmt = _surface->format;
@@ -203,19 +203,19 @@ void Image::rotate_cw()
 		exit(1);
 	}
 
-	// Per-pixel copy (inefficient)
-	void* pixels = _surface->pixels;
-	void* npixels = out->pixels;
+	// Per-pixel copy
+	Uint8* pixels = (Uint8*)_surface->pixels;
+	Uint8* npixels = (Uint8*)out->pixels;
 	int pitch = _surface->pitch;
-	int npitch = size * _h;
+	int npitch = out->pitch;
 
 	for (int y = 0; y < _h; ++y) {
 		for (int x = 0; x < _w; ++x) {
 
 			// Translation: _surface(x, y) -> out(h - y, x)
 			memcpy(
-				(Uint8*) npixels + (_h - y) * size + x * npitch,
-				(Uint8*) pixels + x * size + y * pitch,
+				npixels + (_h - y - 1) * size + x * npitch,
+				pixels + x * size + y * pitch,
 				size
 			);
 		}
@@ -261,19 +261,19 @@ void Image::rotate_ccw()
 		exit(1);
 	}
 
-	// Per-pixel copy (inefficient)
-	void* pixels = _surface->pixels;
-	void* npixels = out->pixels;
+	// Per-pixel copy
+	Uint8* pixels = (Uint8*)_surface->pixels;
+	Uint8* npixels = (Uint8*)out->pixels;
 	int pitch = _surface->pitch;
-	int npitch = size * _h;
+	int npitch = out->pitch;
 
 	for (int y = 0; y < _h; ++y) {
 		for (int x = 0; x < _w; ++x) {
 
 			// Translation: _surface(x, y) -> out(y, w - x)
 			memcpy(
-				(Uint8*)npixels + y * size + (_w - x) * npitch,
-				(Uint8*)pixels + x * size + y * pitch,
+				npixels + y * size + (_w - x - 1) * npitch,
+				pixels + x * size + y * pitch,
 				size
 			);
 		}

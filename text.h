@@ -9,6 +9,7 @@
 
 class Text final : public Widget {
 	static std::unique_ptr<TTF_Font, std::function<void(TTF_Font*)>> _font;
+	friend int main(int, char**);
 
 	SDL_Texture* _texture;
 	SDL_Color _color;

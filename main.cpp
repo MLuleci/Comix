@@ -9,19 +9,33 @@
 using namespace std;
 namespace fs = std::filesystem;
 
-bool is_image(const fs::path& p)
-{
-	if (!fs::exists(p) || !fs::is_regular_file(p))
-		return false;
-
-	string ext = p.extension().string();
-	return !ext.compare(".jpeg") || !ext.compare(".jpg") || !ext.compare(".png");
-}
-
 int main(int argc, char **argv) 
 {
 	// Enable UTF-8 multibyte encoding
 	setlocale(LC_ALL, "en_US.UTF-8");
+
+	// Set respath
+	Util::_respath = fs::path(argv[0]).parent_path() / "res";
+
+	// Load font
+	Text::_font.reset(
+		[]() -> TTF_Font* {
+			// Initialize SDL_ttf subsystem
+			if (TTF_Init() < 0) {
+				cerr << "Failed to initialise SDL_ttf: " << TTF_GetError() << endl;
+				exit(1);
+			}
+
+			// Load the default font
+			fs::path p = Util::get_respath("estre.ttf");
+			TTF_Font* f = TTF_OpenFont(p.string().c_str(), 15);
+			if (!f) {
+				cerr << "Failed to load font: " << TTF_GetError() << endl;
+				exit(1);
+			}
+			return f;
+		}()
+	);
 
     // Print usage
     if (argc != 2) {

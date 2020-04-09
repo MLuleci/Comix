@@ -65,16 +65,17 @@ Button::~Button()
 
 void Button::set_state(const State s) 
 {
+	aquire(_mut);
 	Widget::set_state(s);
 
 	/* Change texture rectangle position according
-		* to pre-determined UI sprite sheet format:
-		*
-		*  0 | ACTIVE
-		*  h | FOCUSED
-		* 2h | IDLE
-		* 3h | DISABLED
-		*/
+	 * to pre-determined UI sprite sheet format:
+	 *
+	 *  0 | ACTIVE
+	 *  h | FOCUSED
+	 * 2h | IDLE
+	 * 3h | DISABLED
+	 */
 	switch (_state) {
 		case ACTIVE:
 			_rect.y = 0;
@@ -93,6 +94,7 @@ void Button::set_state(const State s)
 
 void Button::draw() const 
 {
+	aquire(_mut);
 	SDL_Rect dst = {_x, _y, _w, _h};
 	RenderWindow::get_instance().render(_texture, &_rect, &dst);
 }

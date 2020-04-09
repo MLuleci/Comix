@@ -1,5 +1,6 @@
 #pragma once
 #include <functional>
+#include <mutex>
 
 class Widget {
 public:
@@ -29,4 +30,5 @@ protected:
 
 	State _state;
 	std::function<void(Widget&)> _handler;
+	mutable std::recursive_mutex _mut;
 };

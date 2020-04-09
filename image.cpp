@@ -12,6 +12,8 @@ namespace fs = std::filesystem;
 
 void Image::load() 
 {
+	aquire(_mut);
+
 	// Destroy old surface
 	SDL_FreeSurface(_surface);
 
@@ -32,6 +34,8 @@ void Image::load()
 
 void Image::update()
 {
+	aquire(_mut);
+
 	// Destroy old texture
 	SDL_DestroyTexture(_texture);
 
@@ -70,17 +74,21 @@ void Image::reset()
 
 void Image::draw(const SDL_Rect& dst) const
 {
+	aquire(_mut);
 	RenderWindow::get_instance().render(_texture, NULL, &dst);
 }
 
 void Image::get_size(int *w, int *h) const
 {
+	aquire(_mut);
 	if (w) *w = _w;
 	if (h) *h = _h;
 }
 
 void Image::flip_x()
 {
+	aquire(_mut);
+
 	// Get pixel format
 	SDL_PixelFormat* fmt = _surface->format;
 
@@ -129,6 +137,8 @@ void Image::flip_x()
 
 void Image::flip_y()
 {
+	aquire(_mut);
+
 	// Get pixel format
 	SDL_PixelFormat* fmt = _surface->format;
 	int size = fmt->BytesPerPixel;
@@ -181,6 +191,8 @@ void Image::flip_y()
 
 void Image::rotate_cw()
 {
+	aquire(_mut);
+
 	// Get pixel format
 	SDL_PixelFormat* fmt = _surface->format;
 	int size = fmt->BytesPerPixel;
@@ -239,6 +251,8 @@ void Image::rotate_cw()
 
 void Image::rotate_ccw() 
 {
+	aquire(_mut);
+
 	// Get pixel format
 	SDL_PixelFormat* fmt = _surface->format;
 	int size = fmt->BytesPerPixel;

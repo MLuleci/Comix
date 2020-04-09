@@ -1,10 +1,12 @@
 #pragma once
 #include <filesystem>
 #include <string>
+#include <mutex>
 #include <SDL.h>
 
 class Image {
 	const std::string _path;
+	mutable std::recursive_mutex _mut;
 	SDL_Surface* _surface;
 	SDL_Texture* _texture;
 	int _w;

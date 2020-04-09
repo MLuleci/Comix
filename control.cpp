@@ -12,7 +12,7 @@
 using namespace std;
 namespace fs = std::filesystem;
 
-int SDLCALL watch(void* udata, SDL_Event* evnt)
+int SDLCALL Control::watch(void* udata, SDL_Event* evnt)
 {
 	static_cast<Control*>(udata)->handle(*evnt);
 	return 0;
@@ -22,11 +22,13 @@ Control::Control()
 	: _run(true)
 	, _update(true)
 	, _drag(false)
+	, _rdy(false)
 	, _zoom(1.f)
 	, _minzoom(.01f)
 	, _index(-1)
 	, _win(RenderWindow::get_instance())
 	, _cursor(nullptr, [](SDL_Cursor* p) { SDL_FreeCursor(p); })
+	, _status("Loading...")
 {
 	// Try and set texture filtering to linear
 	if (!SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1")) {
@@ -140,10 +142,7 @@ void Control::handle(const SDL_Event& evnt)
 					// Left window
 					reset_widgets();
 					break;
-				case SDL_WINDOWEVENT_RESIZED:
-				case SDL_WINDOWEVENT_SIZE_CHANGED:
-				case SDL_WINDOWEVENT_MAXIMIZED:
-				case SDL_WINDOWEVENT_RESTORED:
+				default:
 				{
 					// Update window dimensions & related variables
 					_win.get_size(&_winw, &_winh);
@@ -171,6 +170,11 @@ void Control::handle(const SDL_Event& evnt)
 					set_pagenum();
 					_widgets[10]->set_position(_winw - 40, y);
 					_widgets[11]->set_position(_winw - 20, y);
+
+					// Status text
+					int w, h;
+					_status.get_size(&w, &h);
+					_status.set_position((_winw - w) / 2, (_winh - h) / 2);
 
 					// Adjust image
 					if (_zoom == _minzoom) {
@@ -200,10 +204,10 @@ void Control::handle(const SDL_Event& evnt)
 			if (_zoom > _minzoom) {
 				if (sym == SDLK_UP
 					|| sym == SDLK_PAGEUP)
-					drag(0, (int)(_rect.h * .1f));
+					drag(0, (int)(_rect.h * .02f));
 				if (sym == SDLK_DOWN
 					|| sym == SDLK_PAGEDOWN)
-					drag(0, (int)(_rect.h * -.1f));
+					drag(0, (int)(_rect.h * -.02f));
 				if (sym == SDLK_HOME)
 					_rect.y = 0;
 				if (sym == SDLK_END)
@@ -322,7 +326,11 @@ void Control::draw() const
 	SDL_Renderer* r = _win.get_renderer();
 	_win.clear(35, 35, 35);
 
-	_image->draw(_rect);
+	if (_rdy) {
+		_image->draw(_rect);
+	} else {
+		_status.draw();
+	}
 
 	SDL_SetRenderDrawColor(r, 73, 73, 73, 0xFF);
 	SDL_RenderFillRect(r, &_bar);
@@ -339,11 +347,20 @@ void Control::load_index(size_t i)
 	_index = clamp(i, (size_t)0, _paths.size() - 1);
 
 	fs::path p = _paths[_index];
+	_win.set_title(p.filename().string() + " - Comix");
+	set_pagenum();
+
+	for (int i = 0; i < 7; ++i)
+		_widgets[i]->set_state(Widget::DISABLED);
+	_rdy = false;
+
+	draw();
 	_image.reset(new Image(p));
 	fit();
 
-	_win.set_title(p.filename().string() + " - Comix");
-	set_pagenum();
+	for (int i = 0; i < 7; ++i)
+		_widgets[i]->set_state(Widget::IDLE);
+	_rdy = true;
 }
 
 void Control::drag(int dx, int dy)
@@ -535,19 +552,13 @@ void Control::loop(fs::path path)
 		_widgets[11]->set_state(Widget::DISABLED);
 	}
 
+	// Set event watcher
+	SDL_DelEventWatch(Control::watch, this);
+	SDL_AddEventWatch(Control::watch, this);
+
 	// Get initial index & load first image
 	auto found = find(_paths.begin(), _paths.end(), first);
 	load_index((found == _paths.end() ? 0 : distance(_paths.begin(), found)));
-
-	// Set event watcher
-	SDL_DelEventWatch(watch, this);
-	SDL_AddEventWatch(watch, this);
-
-	// Push initial event (to kickstart UI)
-	SDL_Event evnt;
-	evnt.type = SDL_WINDOWEVENT;
-	evnt.window.event = SDL_WINDOWEVENT_RESTORED;
-	SDL_PushEvent(&evnt);
 
 	/* Enter main loop:
 	 * For an explanation on why SDL_AddEventWatch() is used

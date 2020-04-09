@@ -10,8 +10,6 @@
 #include "text.h"
 #include "render.h"
 
-int SDLCALL watch(void*, SDL_Event*);
-
 class Control {
 	/**
 	 *  0: zoom out
@@ -35,6 +33,7 @@ class Control {
 	bool _run;
 	bool _update;
 	bool _drag;
+	bool _rdy;
 	float _zoom;
 	float _minzoom;
 	int _winh;
@@ -43,13 +42,14 @@ class Control {
 	int _focusy;
 	Text* _percent;
 	Text* _pagenum;
-	Text* _loading;
+	Text _status;
 	size_t _index;
 	RenderWindow& _win;
 	SDL_Rect _rect;
 	SDL_Rect _bar;
 
 	Control();
+	static int SDLCALL watch(void*, SDL_Event*);
 	void handle(const SDL_Event&);
 	void draw() const;
 	void load_index(size_t);
@@ -63,8 +63,6 @@ class Control {
 	void set_minzoom();
 	void set_pagenum();
 	void set_percent();
-
-	friend int SDLCALL watch(void*, SDL_Event*);
 public:
 	Control(const Control&) = delete;
 	Control& operator=(const Control&) = delete;

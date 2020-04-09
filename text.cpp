@@ -38,6 +38,8 @@ Text::~Text()
 
 void Text::set_string(const string& s)
 {
+	aquire(_mut);
+
 	// Free old texture
 	SDL_DestroyTexture(_texture);
 	_texture = nullptr;
@@ -76,21 +78,25 @@ void Text::set_string(const string& s)
 
 string Text::get_string() const
 {
+	aquire(_mut);
 	return _string;
 }
 
 void Text::set_color(Uint8 r, Uint8 g, Uint8 b, Uint8 a)
 {
+	aquire(_mut);
 	_color = { r, g, b, a };
 }
 
 SDL_Color Text::get_color() const
 {
+	aquire(_mut);
 	return _color;
 }
 
 void Text::draw() const
 {
+	aquire(_mut);
 	SDL_Rect dst = { _x, _y, _w, _h };
 	RenderWindow::get_instance().render(_texture, NULL, &dst);
 }

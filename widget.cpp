@@ -13,7 +13,8 @@ Widget::Widget()
 {}
 
 Widget::Widget(Widget&& other) 
-	: _x(other._x)
+	: Drawable(forward<Drawable>(other))
+	, _x(other._x)
 	, _y(other._y)
 	, _w(other._w)
 	, _h(other._h)

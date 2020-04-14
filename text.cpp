@@ -1,5 +1,4 @@
 #include <iostream>
-#include <cstdlib>
 #include <utility>
 #include "text.h"
 #include "render.h"
@@ -7,7 +6,6 @@
 #include "util.h"
 
 using namespace std;
-namespace fs = std::filesystem;
 
 unique_ptr<TTF_Font, function<void(TTF_Font*)>> Text::_font(
 	nullptr, 
@@ -26,54 +24,33 @@ Text::Text(const string& s)
 
 Text::Text(Text&& other) 
 	: Widget(forward<Widget>(other))
-	, _texture(exchange(other._texture, nullptr))
 	, _color(exchange(other._color, {0}))
 	, _string(move(other._string))
 {}
 
-Text::~Text()
-{
-	SDL_DestroyTexture(_texture);
-}
-
 void Text::set_string(const string& s)
 {
 	aquire(_mut);
-
-	// Free old texture
-	SDL_DestroyTexture(_texture);
-	_texture = nullptr;
-
-	// Don't bother if string is empty
 	_string = s;
-	if (_string.empty())
-		return;
+
+	// Free old surface
+	SDL_FreeSurface(_surface);
 
 	// Load text into surface
-	SDL_Surface *surface = TTF_RenderUTF8_Blended(
+	_surface = TTF_RenderUTF8_Blended(
 		Text::_font.get(),
 		_string.c_str(), 
 		_color
 	);
-	if (!surface) {
+	if (!_surface) {
 		cerr << "Failed to create surface: " << TTF_GetError() << endl;
 		exit(1);
 	}
 
 	// Set widget size
-	_w = surface->w;
-	_h = surface->h;
-
-	// Create texture from surface
-	_texture = SDL_CreateTextureFromSurface(
-		RenderWindow::get_instance().get_renderer(),
-		surface
-	);
-	SDL_FreeSurface(surface);
-	if (!_texture) {
-		cerr << "Failed to create texture" << endl;
-		exit(1);
-	}
+	_w = _surface->w;
+	_h = _surface->h;
+	_uflag = true;
 }
 
 string Text::get_string() const
@@ -86,6 +63,7 @@ void Text::set_color(Uint8 r, Uint8 g, Uint8 b, Uint8 a)
 {
 	aquire(_mut);
 	_color = { r, g, b, a };
+	set_string(_string);
 }
 
 SDL_Color Text::get_color() const
@@ -98,5 +76,5 @@ void Text::draw() const
 {
 	aquire(_mut);
 	SDL_Rect dst = { _x, _y, _w, _h };
-	RenderWindow::get_instance().render(_texture, NULL, &dst);
+	RenderWindow::get_instance().render(_texture, &dst);
 }

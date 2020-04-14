@@ -1,8 +1,9 @@
 #pragma once
 #include <functional>
 #include <mutex>
+#include "drawable.h"
 
-class Widget {
+class Widget : public Drawable {
 public:
 	enum State { DISABLED, IDLE, FOCUSED, ACTIVE };
 
@@ -21,7 +22,7 @@ public:
 	virtual void set_state(const State);
 	State get_state() const;
 
-	virtual void draw() const {};
+	virtual void draw() const = 0;
 protected:
 	int _x;
 	int _y;

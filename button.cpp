@@ -18,50 +18,26 @@ Button::Button(const fs::path& p)
 	}
 
 	// Load image into surface
-	SDL_Surface *surface = IMG_Load(p.string().c_str());
-	if (!surface) {
+	_surface = IMG_Load(p.string().c_str());
+	if (!_surface) {
 		cerr << "Failed to load surface: " << p << endl;
 		exit(1);
 	}
 
-	// Create texture from surface
-	_texture = SDL_CreateTextureFromSurface(
-		RenderWindow::get_instance().get_renderer(),
-		surface
-	);
-	SDL_FreeSurface(surface);
-	if (!_texture) {
-		cerr << "Failed to create texture" << endl;
-		exit(1);
-	}
-
-	// Initialize texture rectangle
-	SDL_QueryTexture(
-		_texture,
-		nullptr,
-		nullptr,
-		&_w,
-		&_h
-	);
-
 	// Initialize self as widget
-	_h /= 4;
+	_w = _surface->w;
+	_h = _surface->h / 4;
 	_rect.w = _w;
 	_rect.h = _h;
 
 	set_state(IDLE);
+	_uflag = true;
 }
 
 Button::Button(Button&& other)
 	: Widget(forward<Widget>(other))
 	, _rect(exchange(other._rect, {0}))
-	, _texture(exchange(other._texture, nullptr))
 {}
-
-Button::~Button() 
-{
-	SDL_DestroyTexture(_texture);
-}
 
 void Button::set_state(const State s) 
 {
@@ -95,6 +71,6 @@ void Button::set_state(const State s)
 void Button::draw() const 
 {
 	aquire(_mut);
-	SDL_Rect dst = {_x, _y, _w, _h};
+	SDL_Rect dst = { _x, _y, _w, _h };
 	RenderWindow::get_instance().render(_texture, &_rect, &dst);
 }

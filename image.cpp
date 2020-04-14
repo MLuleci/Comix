@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cstdlib>
 #include <cstring>
+#include <SDL.h>
 #include <SDL_image.h>
 #include "image.h"
 #include "render.h"
@@ -27,27 +28,7 @@ void Image::load()
 	// Get dimensions
 	_w = _surface->w;
 	_h = _surface->h;
-
-	// Update texture
-	update();
-}
-
-void Image::update()
-{
-	aquire(_mut);
-
-	// Destroy old texture
-	SDL_DestroyTexture(_texture);
-
-	// Create texture from surface
-	_texture = SDL_CreateTextureFromSurface(
-		RenderWindow::get_instance().get_renderer(),
-		_surface
-	);
-	if (!_texture) {
-		cerr << "Failed to create texture" << endl;
-		exit(1);
-	}
+	_uflag = true;
 }
 
 Image::Image(const fs::path& p)
@@ -61,12 +42,6 @@ Image::Image(const fs::path& p)
 	load();
 }
 
-Image::~Image()
-{
-	SDL_FreeSurface(_surface);
-	SDL_DestroyTexture(_texture);
-}
-
 void Image::reset() 
 {
 	load();
@@ -75,7 +50,7 @@ void Image::reset()
 void Image::draw(const SDL_Rect& dst) const
 {
 	aquire(_mut);
-	RenderWindow::get_instance().render(_texture, NULL, &dst);
+	RenderWindow::get_instance().render(_texture, &dst);
 }
 
 void Image::get_size(int *w, int *h) const
@@ -130,9 +105,7 @@ void Image::flip_x()
 	// Swap & free old surface
 	SDL_FreeSurface(_surface);
 	_surface = out;
-
-	// Update texture
-	update();
+	_uflag = true;
 }
 
 void Image::flip_y()
@@ -184,9 +157,7 @@ void Image::flip_y()
 	// Swap & free old surface
 	SDL_FreeSurface(_surface);
 	_surface = out;
-
-	// Update texture
-	update();
+	_uflag = true;
 }
 
 void Image::rotate_cw()
@@ -244,9 +215,7 @@ void Image::rotate_cw()
 	// Update dimensions
 	_w = _surface->w;
 	_h = _surface->h;
-
-	// Update texture
-	update();
+	_uflag = true;
 }
 
 void Image::rotate_ccw() 
@@ -304,7 +273,5 @@ void Image::rotate_ccw()
 	// Update dimensions
 	_w = _surface->w;
 	_h = _surface->h;
-
-	// Update texture
-	update();
+	_uflag = true;
 }
